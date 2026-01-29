@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Painel Completo Agência</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f6f8;padding:20px;}
+h1{margin-bottom:20px;}
+nav button{padding:10px 15px;margin-right:10px;border:none;cursor:pointer;background:#000;color:#fff;border-radius:4px;}
+.card{background:#fff;padding:20px;margin-top:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:1200px;}
+input,textarea,select,button{padding:8px;margin:5px 0;width:100%;box-sizing:border-box;}
+button{cursor:pointer;border:none;border-radius:4px;}
+.btn-add{background:#000;color:#fff;}
+.btn-remove{background:red;color:#fff;}
+table{width:100%;border-collapse:collapse;margin-top:15px;}
+th,td{padding:10px;border-bottom:1px solid #ddd;}
+th{background:#f0f0f0;}
+.status-ok{color:green;font-weight:bold;}
+.status-pendente{color:orange;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<h1>Painel Completo Agência</h1>
+<nav>
+  <button onclick="mostrarAba('clientes')">Clientes</button>
+  <button onclick="mostrarAba('postagens')">Postagens</button>
+  <button onclick="mostrarAba('cronograma')">Cronograma</button>
+  <button onclick="mostrarAba('leads')">Leads</button>
+  <button onclick="mostrarAba('remarketing')">Remarketing</button>
+  <button onclick="mostrarAba('disparo')">Disparo de Mensagens</button>
+  <button onclick="mostrarAba('faturamento')">Faturamento</button>
+</nav>
+
+<!-- ABA CLIENTES -->
+<div id="clientes" class="card">
+<h2>Adicionar Cliente</h2>
+<input id="clienteNome" placeholder="Nome do cliente">
+<input id="clienteValor" type="number" placeholder="Valor mensal">
+<input id="clienteEntrada" type="date">
+<button class="btn-add" onclick="adicionarCliente()">Adicionar Cliente</button>
+
+<h2>Lista de Clientes</h2>
+<table><thead><tr><th>Cliente</th><th>Valor</th><th>Entrada</th><th>Status</th><th>Ação</th></tr></thead><tbody id="listaClientes"></tbody></table>
+</div>
+
+<!-- ABA POSTAGENS -->
+<div id="postagens" class="card" style="display:none">
+<h2>Adicionar Postagem</h2>
+<select id="postCliente"></select>
+<input id="postData" type="date">
+<input id="postDescricao" placeholder="Descrição da postagem">
+<input id="postLink" placeholder="Link da postagem">
+<select id="postStatus"><option value="pendente">Pendente</option><option value="feito">Feito</option></select>
+<button class="btn-add" onclick="adicionarPostagem()">Adicionar Postagem</button>
+
+<h2>Postagens Salvas</h2>
+<table><thead><tr><th>Cliente</th><th>Data</th><th>Descrição</th><th>Link</th><th>Status</th><th>Ação</th></tr></thead><tbody id="listaPostagens"></tbody></table>
+</div>
+
+<!-- ABA CRONOGRAMA -->
+<div id="cronograma" class="card" style="display:none">
+<h2>Selecionar Cliente</h2>
+<select id="cronCliente" onchange="renderCronograma()"></select>
+<h2>Adicionar Evento Cronograma</h2>
+<input id="cronData" type="date">
+<input id="cronTema" placeholder="Tema">
+<input id="cronDescricao" placeholder="Descrição">
+<button class="btn-add" onclick="adicionarCronograma()">Adicionar Evento</button>
+<h2>Cronograma</h2>
+<table><thead><tr><th>Data</th><th>Tema</th><th>Descrição</th><th>Status</th><th>Ação</th></tr></thead><tbody id="tabelaCronograma"></tbody></table>
+</div>
+
+<!-- ABA LEADS -->
+<div id="leads" class="card" style="display:none">
+<h2>Adicionar Lead</h2>
+<input id="leadNome" placeholder="Nome">
+<input id="leadTelefone" placeholder="Telefone">
+<input id="leadData" type="date">
+<select id="leadStatus"><option value="pendente">Pendente</option><option value="contato">Contato feito</option></select>
+<button class="btn-add" onclick="adicionarLead()">Adicionar Lead</button>
+<h2>Leads Salvos</h2>
+<table><thead><tr><th>Nome</th><th>Telefone</th><th>Data</th><th>Status</th><th>Ação</th></tr></thead><tbody id="listaLeads"></tbody></table>
+</div>
+
+<!-- ABA REMARKETING -->
+<div id="remarketing" class="card" style="display:none">
+<h2>Leads para Remarketing</h2>
+<table><thead><tr><th>Nome</th><th>Telefone</th><th>Data</th><th>Mensagem</th><th>Ação</th></tr></thead><tbody id="listaRemarketing"></tbody></table>
+</div>
+
+<!-- ABA DISPARO DE MENSAGENS -->
+<div id="disparo" class="card" style="display:none">
+<h2>Escrever Mensagem</h2>
+<textarea id="msgDisparo" placeholder="Digite a mensagem"></textarea>
+<h2>Selecionar Contatos</h2>
+<div id="listaContatosDisparo"></div>
+<button class="btn-add" onclick="dispararMensagem()">Enviar Mensagem</button>
+</div>
+
+<!-- ABA FATURAMENTO -->
+<div id="faturamento" class="card" style="display:none">
+<h2>Faturamento</h2>
+<input id="investimentoTotal" type="number" placeholder="Valor de investimento mensal">
+<button class="btn-add" onclick="calcularFaturamento()">Calcular</button>
+<p>Faturamento Bruto: <span id="faturamentoBruto">R$ 0</span></p>
+<p>Faturamento Líquido: <span id="faturamentoLiquido">R$ 0</span></p>
+</div>
+
+<script>
+let clientes=JSON.parse(localStorage.getItem("clientes"))||[];
+let postagens=JSON.parse(localStorage.getItem("postagens"))||[];
+let cronogramas=JSON.parse(localStorage.getItem("cronogramas"))||{};
+let leads=JSON.parse(localStorage.getItem("leads"))||[];
+
+function salvar(){ 
+  localStorage.setItem("clientes",JSON.stringify(clientes));
+  localStorage.setItem("postagens",JSON.stringify(postagens));
+  localStorage.setItem("cronogramas",JSON.stringify(cronogramas));
+  localStorage.setItem("leads",JSON.stringify(leads));
+}
+
+function mostrarAba(aba){
+  ["clientes","postagens","cronograma","leads","remarketing","disparo","faturamento"].forEach(a=>document.getElementById(a).style.display=a===aba?"block":"none");
+  if(aba==="remarketing") renderRemarketing();
+  if(aba==="disparo") renderDisparo();
+}
+
+function adicionarCliente(){const n=clienteNome.value,v=clienteValor.value,e=clienteEntrada.value;if(!n||!v||!e){alert("Preencha tudo");return;}clientes.push({nome:n,valor:v,entrada:e,status:"ativo"});salvar();renderizar();}
+function removerCliente(i){const n=clientes[i].nome;clientes.splice(i,1);postagens=postagens.filter(p=>p.cliente!==n);delete cronogramas[n];salvar();renderizar();}
+function adicionarPostagem(){const c=postCliente.value,d=postData.value,desc=postDescricao.value,l=postLink.value,s=postStatus.value;if(!c||!d||!desc){alert("Preencha campos");return;}postagens.push({cliente:c,data:d,descricao:desc,link:l,status:s});salvar();renderizar();}
+function removerPostagem(i){postagens.splice(i,1);salvar();renderizar();}
+function marcarPostagemFeita(i){postagens[i].status="feito";salvar();renderizar();alert(`Mensagem para ${postagens[i].cliente}: Arte feita e postagem realizada!`);}
+function adicionarCronograma(){const c=cronCliente.value,d=cronData.value,t=cronTema.value,desc=cronDescricao.value;if(!c||!d||!t||!desc){alert("Preencha campos");return;}if(!cronogramas[c]) cronogramas[c]=[];cronogramas[c].push({data:d,tema:t,descricao:desc,status:"pendente"});salvar();renderCronograma();}
+function removerCronograma(c,i){cronogramas[c].splice(i,1);salvar();renderCronograma();}
+function renderCronograma(){const c=cronCliente.value,tb=document.getElementById("tabelaCronograma");tb.innerHTML="";if(!c||!cronogramas[c]) return;cronogramas[c].forEach((e,i)=>{tb.innerHTML+=`<tr><td>${e.data}</td><td>${e.tema}</td><td>${e.descricao}</td><td class="${e.status==='feito'?'status-ok':'status-pendente'}">${e.status}</td><td><button class="btn-remove" onclick="removerCronograma('${c}',${i})">Remover</button></td></tr>`;});}
+function adicionarLead(){const n=leadNome.value,t=leadTelefone.value,d=leadData.value,s=leadStatus.value;if(!n||!t||!d){alert("Preencha tudo");return;}leads.push({nome:n,telefone:t,data:d,status:s});salvar();renderLeads();}
+function removerLead(i){leads.splice(i,1);salvar();renderLeads();}
+function renderLeads(){listaLeads.innerHTML="";leads.forEach((l,i)=>{listaLeads.innerHTML+=`<tr><td>${l.nome}</td><td>${l.telefone}</td><td>${l.data}</td><td>${l.status}</td><td><button class="btn-remove" onclick="removerLead(${i})">Remover</button></td></tr>`;});}
+function renderRemarketing(){listaRemarketing.innerHTML="";leads.filter(l=>l.status==="pendente").forEach((l,i)=>{listaRemarketing.innerHTML+=`<tr><td>${l.nome}</td><td>${l.telefone}</td><td>${l.data}</td><td><input type="text" id="msgR${i}" placeholder="Mensagem"></td><td><button class="btn-add" onclick="enviarRemarketing(${i})">Enviar</button></td></tr>`;});}
+function enviarRemarketing(i){const msg=document.getElementById(`msgR${i}`).value;if(!msg){alert("Escreva a mensagem");return;}alert(`Mensagem enviada para ${leads.filter(l=>l.status==="pendente")[i].nome}: ${msg}`);}
+function renderDisparo(){const c=clientes.concat(leads);let html="";c.forEach((p,i)=>{html+=`<input type="checkbox" id="chk${i}" value="${p.nome}"> ${p.nome} - ${p.telefone||"-"}<br>`;});document.getElementById("listaContatosDisparo").innerHTML=html;}
+function dispararMensagem(){const msg=document.getElementById("msgDisparo").value;if(!msg){alert("Digite a mensagem");return;}const checkboxes=document.querySelectorAll("#listaContatosDisparo input:checked");if(checkboxes.length===0){alert("Selecione contatos");return;}checkboxes.forEach(c=>alert(`Mensagem enviada para ${c.value}: ${msg}`));}
+function calcularFaturamento(){const inv=Number(investimentoTotal.value)||0;const bruto=clientes.reduce((s,c)=>s+Number(c.valor),0);document.getElementById("faturamentoBruto").innerText=`R$ ${bruto}`;document.getElementById("faturamentoLiquido").innerText=`R$ ${bruto-inv}`;}
+function renderizar(){listaClientes.innerHTML="";postCliente.innerHTML="<option value=''>Selecione Cliente</option>";cronCliente.innerHTML="<option value=''>Selecione Cliente</option>";clientes.forEach((c,i)=>{listaClientes.innerHTML+=`<tr><td>${c.nome}</td><td>R$ ${c.valor}</td><td>${c.entrada}</td><td>${c.status}</td><td><button class="btn-remove" onclick="removerCliente(${i})">Remover</button></td></tr>`;postCliente.innerHTML+=`<option value="${c.nome}">${c.nome}</option>`;cronCliente.innerHTML+=`<option value="${c.nome}">${c.nome}</option>`;});listaPostagens.innerHTML="";postagens.forEach((p,i)=>{listaPostagens.innerHTML+=`<tr><td>${p.cliente}</td><td>${p.data}</td><td>${p.descricao}</td><td><a href="${p.link}" target="_blank">Abrir</a></td><td class="${p.status==='feito'?'status-ok':'status-pendente'}">${p.status}</td><td><button class="btn-remove" onclick="removerPostagem(${i})">Remover</button>${p.status==='pendente'?`<button class="btn-add" onclick="marcarPostagemFeita(${i})">Marcar como feita</button>`:""}</td></tr>`;});renderCronograma();renderLeads();}
+renderizar();
+</script>
+
+</body>
+</html>
